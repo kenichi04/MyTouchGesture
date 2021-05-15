@@ -12,8 +12,7 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 
 public class MainActivity extends AppCompatActivity{
-    private static final String DEBUG_TAG = "Velocity";
-    private VelocityTracker mVelocityTracker = null;
+    private static final String DEBUG_TAG = "MultiTouchGesture";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,52 +24,48 @@ public class MainActivity extends AppCompatActivity{
     // イベントが消費された場合、他のハンドラでこのイベントを利用することができなくなる
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-
         int index = event.getActionIndex();
         int action = event.getActionMasked();
         // pointerIdはタッチにおけるポインターの識別子.ジェスチャーの中で
-        // 一意になるIDがふられる. X軸とY軸における移動速度を取得する際に使用
+        // 一意になるIDがふられる.
         int pointerId = event.getPointerId(index);
 
-        switch(action) {
-            case MotionEvent.ACTION_DOWN:
-                if (mVelocityTracker == null) {
-                    // Retrieve a new VelocityTracker object to
-                    // watch the velocity of a motion.
-                    // VelocityTrackerのインスタンスを取得
-                    mVelocityTracker = VelocityTracker.obtain();
-                } else {
-                    // Reset the velocity tracker back to its initial state.
-                    mVelocityTracker.clear();
-                }
-                //Add a user's movement to the tracker.
-                mVelocityTracker.addMovement(event);
-                break;
-            case MotionEvent.ACTION_MOVE:
-                mVelocityTracker.addMovement(event);
-                // When you want to determine the velocity, call
-                // computeCurrentVelocity(). Then call getXVelocity()
-                // and getYVelocity() to retrieve the velocity for each pointer ID.
-                // 引数は速度の単位, 1を渡すとピクセル毎ミリ秒、1000を渡すとピクセル毎秒
-                mVelocityTracker.computeCurrentVelocity(1000);
-                // Log velocity of pixels per second
-                // Best practice to use VelocityTrackerCompat where possible.
-                Log.d(DEBUG_TAG, "X velocity: " +
-                        VelocityTrackerCompat.getXVelocity(mVelocityTracker,
-                                pointerId));
-                Log.d(DEBUG_TAG, "Y velocity: " +
-                        VelocityTrackerCompat.getYVelocity(mVelocityTracker,
-                                pointerId));
-                break;
-            // タッチキャンセル、タッチアップ時にはVelocityTrackerを消去
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                // Returen a VelocityTracker object back to be re-used by others.
-                mVelocityTracker.recycle();
-                mVelocityTracker = null;
-                break;
+        int xPos = -1;
+        int yPos = -1;
+
+        Log.d(DEBUG_TAG, "The action is " + actionToString(action));
+
+        if (event.getPointerCount() > 1) {
+            // The coordinates of the current screen contact, relative to
+            // the responding View or Activity.
+            xPos = (int)MotionEventCompat.getX(event, index);
+            yPos = (int)MotionEventCompat.getY(event, index);
+            Log.d(DEBUG_TAG, "Multitouch event index: " + index +
+                    " x:" + xPos + " y:" + yPos);
+
+        } else {
+            // Single touch event
+            xPos = (int)MotionEventCompat.getX(event, index);
+            yPos = (int)MotionEventCompat.getY(event, index);
+            Log.d(DEBUG_TAG, "Single touch event index: " + index +
+                    " x:" + xPos + " y:" + yPos);
         }
+
         return true;
+    }
+
+    // Given an action int, returns a string description
+    public static String actionToString(int action) {
+        switch(action) {
+            case MotionEvent.ACTION_DOWN: return "Down";
+            case MotionEvent.ACTION_MOVE: return "Move";
+            case MotionEvent.ACTION_POINTER_DOWN: return "Pointer Down";
+            case MotionEvent.ACTION_UP: return "Up";
+            case MotionEvent.ACTION_POINTER_UP: return "Pointer Up";
+            case MotionEvent.ACTION_OUTSIDE: return "Outside";
+            case MotionEvent.ACTION_CANCEL: return "Cancel";
+        }
+        return "";
     }
 
 }
